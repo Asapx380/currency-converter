@@ -1,22 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { currencies, type Currency } from './data/currencies'
-
-type Rates = Record<string, number>
-
-type ChartRange = '7D' | '1M' | '3M' | '1A'
-
-type HistoryPoint = {
-  date: string
-  value: number
-}
-
-type FrankfurterRate = {
-  date: string
-  base: string
-  quote: string
-  rate: number
-}
+import {
+  formatApiDate,
+  formatAxisDate,
+  formatCurrency,
+  formatDisplayDate,
+  parseAmount,
+  sanitizeAmount,
+} from './lib/currency'
+import type { ChartRange, FrankfurterRate, HistoryPoint, Rates } from './types/exchange'
 
 const chartDays: Record<ChartRange, number> = {
   '7D': 7,
@@ -63,40 +56,6 @@ function readCachedRates(): Rates {
   }
 }
 
-function formatApiDate(date: Date) {
-  return date.toISOString().slice(0, 10)
-}
-
-function formatDisplayDate(date?: string) {
-  if (!date) return '—'
-
-  return date.split('-').reverse().join('/')
-}
-
-function formatAxisDate(date?: string) {
-  if (!date) return ''
-
-  const [, month, day] = date.split('-')
-
-  return `${day}/${month}`
-}
-
-function sanitizeAmount(value: string) {
-  const onlyNumbers = value.replace(/[^0-9,.]/g, '').replace(',', '.')
-  const [integerPart, ...decimalParts] = onlyNumbers.split('.')
-
-  if (decimalParts.length === 0) return integerPart
-
-  return `${integerPart}.${decimalParts.join('').slice(0, 2)}`
-}
-
-function parseAmount(value: string) {
-  if (!value || value === '.') return null
-
-  const numericValue = Number(value)
-
-  return Number.isFinite(numericValue) ? numericValue : null
-}
 const FlagRow = ({ flags }: { flags: Currency[] }) => (
   <div className="marquee">
     <div className="marqueeTrack">
@@ -134,15 +93,16 @@ function CurrencyDropdown({
   const [search, setSearch] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const filteredCurrencies = currencies.filter((item) => {
+  const filteredCurrencies = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('pt-BR')
 
-    return (
-      item.country.toLocaleLowerCase('pt-BR').includes(term) ||
-      item.code.toLocaleLowerCase('pt-BR').includes(term) ||
-      item.currency.toLocaleLowerCase('pt-BR').includes(term)
+    return currencies.filter(
+      (item) =>
+        item.country.toLocaleLowerCase('pt-BR').includes(term) ||
+        item.code.toLocaleLowerCase('pt-BR').includes(term) ||
+        item.currency.toLocaleLowerCase('pt-BR').includes(term),
     )
-  })
+  }, [search])
 
   useEffect(() => {
     function closeWhenClickingOutside(event: MouseEvent) {
@@ -154,12 +114,14 @@ function CurrencyDropdown({
       }
     }
 
+    if (!isOpen) return
+
     document.addEventListener('mousedown', closeWhenClickingOutside)
 
     return () => {
       document.removeEventListener('mousedown', closeWhenClickingOutside)
     }
-  }, [])
+  }, [isOpen])
 
   function selectCurrency(currency: Currency) {
     onChange(currency)
@@ -563,25 +525,6 @@ function App() {
 
   function handleChartMouseLeave() {
     setHoverPoint(null)
-  }
-
-  function formatCurrency(value: number, currencyCode: string) {
-    if (currencyCode === 'XCG') {
-      return `${value.toLocaleString('pt-BR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })} XCG`
-    }
-
-    try {
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: currencyCode,
-        maximumFractionDigits: 2,
-      }).format(value)
-    } catch {
-      return `${value.toFixed(2)} ${currencyCode}`
-    }
   }
 
   function swapCurrencies() {
