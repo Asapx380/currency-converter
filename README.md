@@ -63,6 +63,10 @@ currency-converter/
 │   ├── assets/          # Imagens usadas na interface
 │   ├── data/
 │   │   └── currencies.ts   # Lista de moedas, países e bandeiras
+│   ├── lib/
+│   │   └── currency.ts     # Formatação e validação de valores
+│   ├── types/
+│   │   └── exchange.ts     # Tipos compartilhados de domínio/API
 │   ├── App.tsx           # Componente principal: conversor, dropdown e gráfico
 │   ├── App.css
 │   ├── index.css
@@ -76,7 +80,7 @@ currency-converter/
 
 ### Pré-requisitos
 
-- [Node.js](https://nodejs.org/) 18 ou superior
+- [Node.js](https://nodejs.org/) 20.19 ou superior (ou 22.12+)
 - npm
 
 ### Passo a passo
