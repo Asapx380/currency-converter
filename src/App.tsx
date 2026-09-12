@@ -6,9 +6,17 @@ import {
   formatAxisDate,
   formatCurrency,
   formatDisplayDate,
-  parseAmount,
   sanitizeAmount,
 } from './lib/currency'
+import {
+  apiCurrencyCode,
+  computeRate,
+  convertAmount,
+  currencyFactor,
+  readCachedRates,
+  RATES_CACHE_KEY,
+  XCG_PER_USD,
+} from './lib/exchange'
 import type { ChartRange, FrankfurterRate, HistoryPoint, Rates } from './types/exchange'
 
 const chartDays: Record<ChartRange, number> = {
@@ -19,7 +27,6 @@ const chartDays: Record<ChartRange, number> = {
 }
 
 const frankfurterApi = 'https://api.frankfurter.dev'
-const xcgPerUsd = 1.79
 
 const chartWidth = 800
 const chartHeight = 220
@@ -29,32 +36,6 @@ const chartPaddingTop = 16
 const chartPaddingBottom = 26
 const chartUpColor = '#34d399'
 const chartDownColor = '#f87171'
-
-function apiCurrencyCode(code: string) {
-  return code === 'XCG' ? 'USD' : code
-}
-
-function currencyFactor(code: string) {
-  return code === 'XCG' ? xcgPerUsd : 1
-}
-
-function readCachedRates(): Rates {
-  try {
-    const storedRates = localStorage.getItem('cambio64-rates')
-
-    if (!storedRates) return {}
-
-    const parsedRates = JSON.parse(storedRates) as Rates
-
-    const isValid = Object.values(parsedRates).every(
-      (value) => typeof value === 'number' && Number.isFinite(value),
-    )
-
-    return isValid ? parsedRates : {}
-  } catch {
-    return {}
-  }
-}
 
 const FlagRow = ({ flags }: { flags: Currency[] }) => (
   <div className="marquee">
@@ -287,7 +268,7 @@ function App() {
         const data = (await response.json()) as FrankfurterRate[]
         const nextRates: Rates = {
           USD: 1,
-          XCG: xcgPerUsd,
+          XCG: XCG_PER_USD,
         }
 
         data.forEach((item) => {
@@ -298,7 +279,7 @@ function App() {
 
         if (Object.keys(nextRates).length > 2) {
           setRates(nextRates)
-          localStorage.setItem('cambio64-rates', JSON.stringify(nextRates))
+          localStorage.setItem(RATES_CACHE_KEY, JSON.stringify(nextRates))
         }
       } catch {
         // Em caso de falha, usa as últimas taxas válidas salvas no navegador.
@@ -310,22 +291,15 @@ function App() {
     return () => controller.abort()
   }, [])
 
-  const rate = useMemo(() => {
-    const fromRate = rates[from.code]
-    const toRate = rates[to.code]
+  const rate = useMemo(
+    () => computeRate(from.code, to.code, rates),
+    [from, rates, to],
+  )
 
-    if (!fromRate || !toRate) return null
-
-    return toRate / fromRate
-  }, [from, rates, to])
-
-  const convertedAmount = useMemo(() => {
-    const numericAmount = parseAmount(amount)
-
-    if (!rate || numericAmount === null) return 0
-
-    return numericAmount * rate
-  }, [amount, rate])
+  const convertedAmount = useMemo(
+    () => convertAmount(amount, rate),
+    [amount, rate],
+  )
 
   useEffect(() => {
     const controller = new AbortController()

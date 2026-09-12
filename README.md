@@ -20,6 +20,7 @@ Conversor de moedas interativo desenvolvido com React, TypeScript e Vite. Permit
 - [Build de produção](#build-de-produção)
 - [Deploy no Netlify](#deploy-no-netlify)
 - [Fonte de dados](#fonte-de-dados)
+- [Testes](#testes)
 - [Possíveis melhorias futuras](#possíveis-melhorias-futuras)
 - [Autor](#autor)
 
@@ -49,6 +50,7 @@ O câmbio64 permite escolher uma moeda de origem e uma de destino, informar um v
 - [Vite](https://vite.dev/)
 - CSS puro, sem frameworks de estilo
 - [Oxlint](https://oxc.rs/) para lint do código
+- [Vitest](https://vitest.dev/) para testes unitários
 - [Frankfurter API](https://frankfurter.dev/) para as taxas de câmbio (atuais e históricas)
 
 ## Estrutura do projeto
@@ -64,7 +66,8 @@ currency-converter/
 │   ├── data/
 │   │   └── currencies.ts   # Lista de moedas, países e bandeiras
 │   ├── lib/
-│   │   └── currency.ts     # Formatação e validação de valores
+│   │   ├── currency.ts     # Formatação e validação de valores
+│   │   └── exchange.ts     # Taxa, conversão, cache e lastro XCG
 │   ├── types/
 │   │   └── exchange.ts     # Tipos compartilhados de domínio/API
 │   ├── App.tsx           # Componente principal: conversor, dropdown e gráfico
@@ -122,6 +125,7 @@ http://localhost:5173
 | `npm run dev`     | Inicia o servidor de desenvolvimento com hot reload |
 | `npm run build`   | Gera a versão de produção na pasta `dist`       |
 | `npm run lint`    | Executa o Oxlint sobre o código                 |
+| `npm test`        | Roda os testes unitários (Vitest)               |
 | `npm run preview` | Serve localmente a build de produção            |
 
 ## Build de produção
@@ -150,9 +154,17 @@ Publish directory: dist
 
 As taxas de câmbio (atuais e históricas) são obtidas em tempo real através da [Frankfurter API](https://frankfurter.dev/), uma API gratuita e de código aberto baseada nos dados do Banco Central Europeu. Caso a API esteja indisponível, o aplicativo utiliza a última taxa válida salva no navegador (localStorage).
 
+## Testes
+
+```bash
+npm test
+```
+
+A suíte cobre formatação de valores, conversão, cache de taxas e o catálogo de 64 países. O GitHub Actions (`CI`) roda lint, testes e build em todo push/PR na `main`.
+
 ## Possíveis melhorias futuras
 
-- Adicionar testes automatizados (unitários e de interface)
+- Testes de interface do dropdown e do gráfico
 - Permitir favoritar pares de moedas usados com frequência
 - Exportar o histórico de conversão em CSV
 - Suporte a modo claro, além do tema atual
