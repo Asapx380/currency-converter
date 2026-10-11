@@ -20,7 +20,7 @@ export function computeRate(
   const fromRate = rates[fromCode]
   const toRate = rates[toCode]
 
-  if (!fromRate || !toRate) return null
+  if (!Number.isFinite(fromRate) || !Number.isFinite(toRate) || fromRate <= 0 || toRate <= 0) return null
 
   return toRate / fromRate
 }
@@ -28,7 +28,7 @@ export function computeRate(
 export function convertAmount(amount: string, rate: number | null) {
   const numericAmount = parseAmount(amount)
 
-  if (!rate || numericAmount === null) return 0
+  if (rate === null || !Number.isFinite(rate) || rate <= 0 || numericAmount === null) return 0
 
   return numericAmount * rate
 }
@@ -41,13 +41,14 @@ export function readCachedRates(
 
     if (!storedRates) return {}
 
-    const parsedRates = JSON.parse(storedRates) as Rates
+    const parsedRates: unknown = JSON.parse(storedRates)
+    if (!parsedRates || typeof parsedRates !== 'object' || Array.isArray(parsedRates)) return {}
 
     const isValid = Object.values(parsedRates).every(
-      (value) => typeof value === 'number' && Number.isFinite(value),
+      (value) => typeof value === 'number' && Number.isFinite(value) && value > 0,
     )
 
-    return isValid ? parsedRates : {}
+    return isValid ? parsedRates as Rates : {}
   } catch {
     return {}
   }
