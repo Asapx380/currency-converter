@@ -52,6 +52,11 @@ describe('convertAmount', () => {
 })
 
 describe('readCachedRates', () => {
+  it('rejeita arrays, valores primitivos e taxas não positivas', () => {
+    for (const invalid of ['[]', '[1,2]', '42', 'null', '"USD"', '{"USD":0}', '{"USD":-1}']) {
+      expect(readCachedRates({ getItem: () => invalid })).toEqual({})
+    }
+  })
   it('retorna objeto vazio sem cache', () => {
     expect(
       readCachedRates({
