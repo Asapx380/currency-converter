@@ -175,3 +175,16 @@ Desenvolvido por [Wesley Luther](https://github.com/Asapx380).
 
 - GitHub: [@Asapx380](https://github.com/Asapx380)
 - LinkedIn: [wesley-luther](https://linkedin.com/in/wesley-luther)
+
+## Rotina de manutenção
+
+Para reproduzir a instalação usando o lockfile versionado:
+
+```bash
+npm ci
+npm run lint
+npm test
+npm run build
+```
+
+Antes de publicar, confira o seletor de moedas e o gráfico em telas pequenas, a navegação por teclado e o comportamento com a rede indisponível. Alterações nas dependências devem incluir o `package-lock.json` correspondente.
